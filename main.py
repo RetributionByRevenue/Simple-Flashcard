@@ -25,7 +25,9 @@ bootstrap_links = [
     function senddata(){
         data = new FormData()
         let question = document.getElementById("question").innerHTML;
+        if(question.includes("<span")){question = document.getElementById("question").innerText}
         let answer = document.getElementById("answer").innerHTML;
+        if(answer.includes("<span")){answer = document.getElementById("answer").innerText}
         data.set('question', question )
         data.set('answer', answer     )
         let request = new XMLHttpRequest();
@@ -127,10 +129,12 @@ async def submit(request):
         with open(file_name, "wb") as fh:
             fh.write(base64.decodebytes(base64_str))
     else:
+        ''
         texttoimage.convert(question_content, image_file="./questions/"+timestr+".png", font_size=30, color='red')
     #process answer
     answer_content = form_data.get('answer')
     answer_process = re.search(r'<img[^>]*>', answer_content)
+    #print(answer_content)
     if answer_process:
         img=answer_process.group()
         base64_str= ((re.search(r',[^"]*"', img)).group()[1:-1]).encode()
@@ -139,6 +143,7 @@ async def submit(request):
         with open(file_name, "wb") as fh:
             fh.write(base64.decodebytes(base64_str))        
     else:
+        print(answer_content)
         texttoimage.convert(answer_content, image_file="./answers/"+timestr+".png", font_size=30, color='red')
     return "Flashcard submitted successfully"
 
