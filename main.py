@@ -3,6 +3,7 @@ import time
 import re
 import base64
 import texttoimage
+import os
 
 cdn = 'https://cdn.jsdelivr.net/npm/bootstrap'
 bootstrap_links = [
@@ -22,6 +23,14 @@ bootstrap_links = [
     }
     </style>
     <script>
+    function setWindow(element) {
+        window.button=element
+    }
+
+    function removeWindowElement() {
+        window.button.remove()
+    }
+
     function senddata(){
         data = new FormData()
         let question = document.getElementById("question").innerHTML;
@@ -32,6 +41,35 @@ bootstrap_links = [
         data.set('answer', answer     )
         let request = new XMLHttpRequest();
         request.open("POST", '/', true);
+        request.send(data)
+    }
+    
+    function removeModal(button) {
+        var modal = button.closest('.modal');
+        var filename = button; 
+
+        if (modal) {
+            // Hide the modal using Bootstrap's modal method
+            var modalInstance = bootstrap.Modal.getInstance(modal);
+            modalInstance.hide();
+
+            // Remove the modal from the DOM after it's hidden
+            modal.addEventListener('hidden.bs.modal', function () {
+                modal.parentNode.removeChild(modal);
+            });
+        }
+    }
+
+
+
+    function showClass(button) {
+        //alert(button.id);
+        removeModal(button)
+        data = new FormData()
+        data.set('item', button.id )
+        let request = new XMLHttpRequest();
+        removeWindowElement()
+        request.open("POST", "/delete", true);
         request.send(data)
     }
     </script>
@@ -70,14 +108,23 @@ def generate_img_tags(directory_path):
             
             bootstrap_modal=f'''
                                 <!-- Button trigger modal -->
-                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#{filename}">
+                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#{filename}" onclick="setWindow(this)">
                                 <IMG src="./questions/{filename}" class="{filename}">
                                 </button>
                                 <!-- Modal -->
                                 <div class="modal fade" id="{filename}" tabindex="-1" aria-hidden="true">
                                 <div class="modal-dialog">
                                     <div class="modal-content">
+                                    <button type="button" 
+                                            class="btn btn-danger"
+                                            id={filename}
+                                            onclick="showClass(this)"
+                                            >
+                                            Delete
+                                    </button>
+                                    <br>
                                     <IMG src="./answers/{filename}" class="{filename}">
+                                     
                                     </div>
                                 </div>
                                 </div>'''
@@ -113,6 +160,14 @@ def menucontent(menu : str):
     else:
         
         return generate_img_tags('./questions')
+
+@app.post('/delete')
+async def delete(request):
+    form_data = await request.form()
+    print(form_data)
+    os.remove(f"./questions/{form_data.get('item')}")
+    os.remove(f"./answers/{form_data.get('item')}")
+    return "done"
 
 @app.post('/')
 async def submit(request):
